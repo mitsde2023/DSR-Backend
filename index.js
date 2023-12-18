@@ -9,7 +9,7 @@ const CounselorWiseSummery = require('./models/CounselorData');
 const CounselorWiseSummary = require('./models/CounselorWiseSummary')
 const CounselorWiseTeam = require('./models/CounselorWiseTeam')
 const app = express();
-const port = 9000;
+const port = 8000;
 
 app.use(cors());
 app.use(express.json());
