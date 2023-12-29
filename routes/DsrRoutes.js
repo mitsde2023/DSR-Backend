@@ -115,7 +115,8 @@ async function HirrachicalData(selectedMonth, salesManager, teamManager, teamLea
   try {
     let whereClause = {};
     let monthClause = {};
-    if (selectedMonth) {
+
+    if (selectedMonth.length) {
       whereClause.Month = selectedMonth;
       monthClause.Month = selectedMonth;
     }
@@ -166,8 +167,6 @@ async function HirrachicalData(selectedMonth, salesManager, teamManager, teamLea
     });
 
 
-    console.log(counselorMetrics.length, 93);
-
     const result = [];
     counselorMetrics.forEach((counselor) => {
       const AmountReceivedSum = counselor.CounselorWiseSummaries.reduce((sum, summary) => {
@@ -197,6 +196,7 @@ async function getHierarchicalData(data) {
   const hierarchy = {};
 
   for (const counselorData of data) {
+
     const salesManager = counselorData.SalesManager;
     const teamManager = counselorData.TeamManager;
     const teamLeaders = counselorData.TeamLeaders;
@@ -228,6 +228,29 @@ async function getHierarchicalData(data) {
   return hierarchy;
 }
 
+// async function getUniqueMonths() {
+//   try {
+//     // Use Sequelize to find distinct months from the CounselorData model
+//     const uniqueMonths = await CounselorData.findAll({
+//       attributes: [
+//         [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
+//       ],
+//       raw: true,
+//     });
+
+//     // Extract the 'Month' property from each result object and return as an object
+//     const uniqueMonthsObject = {};
+//     uniqueMonths.forEach(entry => {  
+//       uniqueMonthsObject[entry.Month] = entry.Month;
+//     });
+
+//     return uniqueMonthsObject;
+//   } catch (error) {
+//     console.error('Error fetching unique months:', error);
+//     throw error;
+//   }
+// }
+
 async function getUniqueMonths() {
   try {
     // Use Sequelize to find distinct months from the CounselorData model
@@ -238,13 +261,13 @@ async function getUniqueMonths() {
       raw: true,
     });
 
-    // Extract the 'Month' property from each result object and return as an object
-    const uniqueMonthsObject = {};
-    uniqueMonths.forEach(entry => {
-      uniqueMonthsObject[entry.Month] = entry.Month;
-    });
+    // Create an array of objects with the desired structure
+    const result = uniqueMonths.map((entry, index) => ({
+      id: index + 1, // Assign a unique ID, you can adjust this based on your requirements
+      month: entry.Month,
+    }));
 
-    return uniqueMonthsObject;
+    return result;
   } catch (error) {
     console.error('Error fetching unique months:', error);
     throw error;
@@ -254,23 +277,43 @@ async function getUniqueMonths() {
 
 router.get('/hierarchical-data-filter', async (req, res) => {
   try {
+    const { selectedMonth } = req.query;
+    console.log(selectedMonth, 258)
     const uniqueMonths = await getUniqueMonths();
 
-    const counselorMetrics = await CounselorData.findAll({
+    if (selectedMonth.length > 1) {
+      const counselorMetrics = await CounselorData.findAll({
+        attributes: [
+          'Counselor',
+          'TeamLeaders',
+          'TeamManager',
+          'SalesManager',
+          'Group',
+        ],
+        where: { Month: selectedMonth }
+      });
+      const hierarchicalData = await getHierarchicalData(counselorMetrics);
+      res.json({ uniqueMonths, hierarchicalData });
 
-      attributes: [
-        'Counselor',
-        'TeamLeaders',
-        'TeamManager',
-        'SalesManager',
-        'Group',
-      ],
-    });
-    const hierarchicalData = await getHierarchicalData(counselorMetrics);
+    } else {
+      const counselorMetrics = await CounselorData.findAll({
+        attributes: [
+          'Counselor',
+          'TeamLeaders',
+          'TeamManager',
+          'SalesManager',
+          'Group',
+        ],
+        // where: { Month: selectedMonth }
+      });
+      const hierarchicalData = await getHierarchicalData(counselorMetrics);
+      res.json({ uniqueMonths, hierarchicalData });
+
+    }
+
     // console.log(hierarchicalData);
 
     // res.json(hierarchicalData);
-    res.json({ uniqueMonths, hierarchicalData });
 
   } catch (error) {
     console.error('Error fetching counselor metrics:', error);
@@ -565,7 +608,6 @@ router.get('/react-table-data', async (req, res) => {
     const counselorData = await HirrachicalData(selectedMonth, selectedSalesManager, selectedTeamManager, selectedTeamLeader);
     const organizedData = await organizeData(counselorData);
     const formattedData = await formatData(organizedData);
-    // console.log(formattedData)
     const dataWithRanking = await assignRank(formattedData);
     res.json(dataWithRanking);
   } catch (error) {
