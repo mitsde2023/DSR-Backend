@@ -49,7 +49,7 @@ const CounselorData = sequelize.define('CounselorData', {
     type: DataTypes.STRING,
   },
 }, {
-  timestamps: false,
+  timestamps: true,
   indexes: [
     {
       unique: true,

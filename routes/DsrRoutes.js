@@ -251,6 +251,64 @@ async function getHierarchicalData(data) {
 //   }
 // }
 
+// async function getUniqueMonths() {
+//   try {
+//     // Use Sequelize to find distinct months from the CounselorData model
+//     const uniqueMonths = await CounselorData.findAll({
+//       attributes: [
+//         [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
+//       ],
+//       order: [
+//         ['Month', 'DESC'],
+//       ],
+//       raw: true,
+//     });
+
+//     // Create an array of objects with the desired structure
+//     const result = uniqueMonths.map((entry, index) => ({
+//       id: index + 1, // Assign a unique ID, you can adjust this based on your requirements
+//       month: entry.Month,
+//     }));
+
+//     console.log(result);
+//     return result;
+//   } catch (error) {
+//     console.error('Error fetching unique months:', error);
+//     throw error;
+//   }
+// }
+
+router.get('/admissionsCountByDate/:month', async (req, res) => {
+  const { month } = req.params;
+
+  try {
+    const admissionsData = await CounselorWiseSummary.findAll({
+      attributes: [
+        [Sequelize.fn('DATE_FORMAT', Sequelize.col('SaleDate'), '%Y-%m-%d'), 'date'],
+        [Sequelize.fn('count', Sequelize.col('LeadID')), 'admissionsCount'],
+      ],
+      where: {
+        Month: month,
+        SaleDate: {
+          [Sequelize.Op.not]: null,
+        },
+      },
+      group: [Sequelize.fn('DATE_FORMAT', Sequelize.col('SaleDate'), '%Y-%m-%d')],
+      order: [[Sequelize.fn('DATE_FORMAT', Sequelize.col('SaleDate'), '%Y-%m-%d'), 'ASC']],
+      raw: true,
+    });
+
+    res.json(admissionsData);
+  } catch (error) {
+    console.error('Error fetching admissions data:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+
+
 async function getUniqueMonths() {
   try {
     // Use Sequelize to find distinct months from the CounselorData model
@@ -258,8 +316,12 @@ async function getUniqueMonths() {
       attributes: [
         [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
       ],
+      order: [
+        ['updatedAt', 'DESC'], // Order by updatedAt in descending order
+      ],
       raw: true,
     });
+
 
     // Create an array of objects with the desired structure
     const result = uniqueMonths.map((entry, index) => ({
@@ -267,6 +329,7 @@ async function getUniqueMonths() {
       month: entry.Month,
     }));
 
+    console.log(result);
     return result;
   } catch (error) {
     console.error('Error fetching unique months:', error);
@@ -274,11 +337,128 @@ async function getUniqueMonths() {
   }
 }
 
+router.get('/api/unique-monthsID', async (req, res) => {
+  try {
+    // Use Sequelize to find distinct months from the CounselorData model
+    const uniqueMonths = await CounselorData.findAll({
+      attributes: [
+        [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
+      ],
+      order: [
+        ['updatedAt', 'DESC'], // Order by updatedAt in descending order
+      ],
+      raw: true,
+    });
+
+
+    // Extract the 'Month' property from each result object and return as an object
+    const result = uniqueMonths.map((entry, index) => ({
+      id: index + 1, // Assign a unique ID, you can adjust this based on your requirements
+      month: entry.Month,
+    }));
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching unique months:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.get('/api/unique-months', async (req, res) => {
+  try {
+    // Use Sequelize to find distinct months from the CounselorData model
+    const uniqueMonths = await CounselorData.findAll({
+      attributes: [
+        [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
+      ],
+      order: [
+        ['updatedAt', 'DESC'], // Order by updatedAt in descending order
+      ],
+      raw: true,
+    });
+
+    // Extract the 'Month' property from each result object and return as an object
+    const uniqueMonthsObject = {};
+    uniqueMonths.forEach(entry => {
+      uniqueMonthsObject[entry.Month] = entry.Month;
+    });
+
+    res.json(uniqueMonthsObject);
+  } catch (error) {
+    console.error('Error fetching unique months:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// async function getUniqueMonths() {
+//   try {
+//     // Use Sequelize to find distinct months from the CounselorData model
+//     const uniqueMonths = await CounselorData.findAll({
+//       attributes: [
+//         [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
+//       ],
+//       raw: true,
+//     });
+
+//     // Create an array of objects with the desired structure
+//     const result = uniqueMonths.map((entry, index) => ({
+//       id: index + 1, // Assign a unique ID, you can adjust this based on your requirements
+//       month: entry.Month,
+//     }));
+
+//     return result;
+//   } catch (error) {
+//     console.error('Error fetching unique months:', error);
+//     throw error;
+//   }
+// }
+
+router.get('/hierarchical-data-filterID', async (req, res) => {
+  try {
+    const { selectedMonth } = req.query;
+
+    if (selectedMonth.length > 1) {
+      const counselorMetrics = await CounselorData.findAll({
+        attributes: [
+          'Counselor',
+          'TeamLeaders',
+          'TeamManager',
+          'SalesManager',
+          'Group',
+        ],
+        where: { Month: selectedMonth }
+      });
+      const hierarchicalData = await getHierarchicalData(counselorMetrics);
+      res.json({ hierarchicalData });
+
+    } else {
+      const counselorMetrics = await CounselorData.findAll({
+        attributes: [
+          'Counselor',
+          'TeamLeaders',
+          'TeamManager',
+          'SalesManager',
+          'Group',
+        ],
+        where: { Month: selectedMonth }
+      });
+      const hierarchicalData = await getHierarchicalData(counselorMetrics);
+      res.json({ hierarchicalData });
+
+    }
+
+    // console.log(hierarchicalData);
+
+    // res.json(hierarchicalData);
+
+  } catch (error) {
+    console.error('Error fetching counselor metrics:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 router.get('/hierarchical-data-filter', async (req, res) => {
   try {
     const { selectedMonth } = req.query;
-    console.log(selectedMonth, 258)
     const uniqueMonths = await getUniqueMonths();
 
     if (selectedMonth.length > 1) {
@@ -304,7 +484,7 @@ router.get('/hierarchical-data-filter', async (req, res) => {
           'SalesManager',
           'Group',
         ],
-        // where: { Month: selectedMonth }
+        where: { Month: selectedMonth }
       });
       const hierarchicalData = await getHierarchicalData(counselorMetrics);
       res.json({ uniqueMonths, hierarchicalData });
@@ -1101,28 +1281,7 @@ async function calculateGroupTotals(data) {
   return groupDataArray;
 }
 
-router.get('/api/unique-months', async (req, res) => {
-  try {
-    // Use Sequelize to find distinct months from the CounselorData model
-    const uniqueMonths = await CounselorData.findAll({
-      attributes: [
-        [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
-      ],
-      raw: true,
-    });
 
-    // Extract the 'Month' property from each result object and return as an object
-    const uniqueMonthsObject = {};
-    uniqueMonths.forEach(entry => {
-      uniqueMonthsObject[entry.Month] = entry.Month;
-    });
-
-    res.json(uniqueMonthsObject);
-  } catch (error) {
-    console.error('Error fetching unique months:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 router.get('/group-wise-overall', async (req, res) => {
   try {

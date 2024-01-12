@@ -120,7 +120,7 @@ app.post('/summary/upload', upload.single('excelFile'), async (req, res) => {
                         Sourcetype: row.getCell(21).value || null,
                         Team2: row.getCell(22).value || null,
                         PrimarySource: row.getCell(23).value || null,
-                        SecondarySource: row.getCell(24).value || null,    
+                        SecondarySource: row.getCell(24).value || null,
                         LeadID2: row.getCell(25).value || null,
                         Source: row.getCell(26).value || null,
                         AgencySource: row.getCell(27).value || null,

@@ -97,8 +97,7 @@ const CounselorWiseSummary = sequelize.define('CounselorWiseSummary', {
     type: DataTypes.STRING,
   },
 }, {
-  timestamps: false,
+  timestamps: true,
 });
-
 
 module.exports = CounselorWiseSummary;
