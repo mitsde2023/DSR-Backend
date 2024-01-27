@@ -782,7 +782,6 @@ async function assignRank(data) {
 
 router.get('/react-table-data', async (req, res) => {
   try {
-
     const { selectedMonth, selectedSalesManager, selectedTeamManager, selectedTeamLeader } = req.query; // Use req.query instead of req.params
     console.log(selectedSalesManager, selectedTeamManager, selectedTeamLeader, selectedMonth, 711)
     const counselorData = await HirrachicalData(selectedMonth, selectedSalesManager, selectedTeamManager, selectedTeamLeader);
@@ -1295,6 +1294,7 @@ router.get('/group-wise-overall', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 router.get('/count-data', async (req, res) => {
   try {
     const counselorData = await HirrachicalData();

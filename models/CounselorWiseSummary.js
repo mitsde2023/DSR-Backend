@@ -1,4 +1,4 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes, literal } = require('sequelize');
 const sequelize = require('../config');
 
 const CounselorWiseSummary = sequelize.define('CounselorWiseSummary', {
@@ -95,6 +95,9 @@ const CounselorWiseSummary = sequelize.define('CounselorWiseSummary', {
   },
   SecondarySource2: {
     type: DataTypes.STRING,
+  },
+  LeadToSaleDuration: {
+    type: DataTypes.VIRTUAL,
   },
 }, {
   timestamps: true,

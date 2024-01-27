@@ -7,7 +7,9 @@ const DsrDeleteDataRoutes = require('./routes/DataDelete');
 const sequelize = require('./config');
 const CounselorWiseSummery = require('./models/CounselorData');
 const CounselorWiseSummary = require('./models/CounselorWiseSummary')
-const CounselorWiseTeam = require('./models/CounselorWiseTeam')
+const CounselorWiseTeam = require('./models/CounselorWiseTeam');
+const { col, fn, DataTypes, literal, Op } = require('sequelize');
+
 const app = express();
 const port = 8000;
 
@@ -215,6 +217,127 @@ app.post('/conselor-target-totalLead/upload', upload.single('excelFile'), async 
     }
 });
 
+app.get('/api/leadToSaleDurationCount', async (req, res) => {
+    try {
+        const result = await CounselorWiseSummary.findAll({
+            attributes: [
+                'Month',
+                [fn('COUNT', col('LeadToSaleDuration')), 'LeadToSaleDurationCount'],
+            ],
+            where: {
+                LeadToSaleDuration: 0,
+            },
+            group: ['Month'],
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching leadToSaleDurationCount:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+app.get('/api/leadToSaleDurationZero/:month', async (req, res) => {
+    try {
+        const month = req.params.month
+        const result = await CounselorWiseSummary.findAll({
+            attributes: [
+                [literal('COUNT(CASE WHEN LeadToSaleDuration = 0 THEN 1 END)'), 'LeadToSaleDurationCount'],
+                [literal('MIN(LeadCreationDate)'), 'LeadCreationDate'],
+            ],
+            where: {
+                month: month,
+                LeadToSaleDuration: 0,
+            },
+            group: ['LeadCreationDate'],
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching leadToSaleDurationZero:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
+app.get('/api/allmonthssourceCounts', async (req, res) => {
+    try {
+        const result = await CounselorWiseSummary.findAll({
+            attributes: [
+                'AgencySource',
+                [sequelize.fn('COUNT', sequelize.col('AgencySource')), 'sourceCount'],
+            ],
+            group: ['AgencySource'],
+            where: {
+                AgencySource: {
+                    [Op.ne]: null,
+                },
+            },
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching source counts by month:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/api/sourceCountsByMonth', async (req, res) => {
+    try {
+        const { month } = req.query;
+
+        const whereCondition = month
+            ? {
+                Month: {
+                    [Op.eq]: month,
+                    [Op.ne]: null, // Exclude null values
+                },
+                AgencySource: {
+                    [Op.ne]: null, // Exclude null values for AgencySource
+                },
+
+            }
+            : {
+                Month: {
+                    [Op.ne]: null, // Exclude null values
+                },
+                AgencySource: {
+                    [Op.ne]: null, // Exclude null values for AgencySource
+                },
+
+            };
+
+        const result = await CounselorWiseSummary.findAll({
+            attributes: [
+                'Month',
+                'AgencySource',
+                [sequelize.fn('COUNT', sequelize.col('AgencySource')), 'sourceCount'],
+            ],
+            where: whereCondition,
+            group: ['Month', 'AgencySource'],
+        });
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching source counts by month:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+app.post('/api/saveFormData', async (req, res) => {
+    try {
+        const newData = req.body;
+        console.log(newData, 49)
+        const savedData = await CounselorWiseSummary.create(newData);
+        res.status(201).json(savedData);
+    } catch (error) {
+        console.error('Error saving data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 // app.post('/conselor-target-totalLead/upload', upload.single('excelFile'), async (req, res) => {
 //     try {
