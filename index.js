@@ -339,6 +339,68 @@ app.post('/api/saveFormData', async (req, res) => {
     }
 });
 
+
+
+app.get('/monthlyCourseCounts', async (req, res) => {
+    try {
+      const monthlyCounts = await CounselorWiseSummary.findAll({
+        attributes: [
+          [
+            sequelize.fn(
+              'CONCAT',
+              sequelize.fn('LEFT', sequelize.col('Month'), 3),
+              sequelize.fn('RIGHT', sequelize.col('Month'), 2)
+            ),
+            'Month',
+          ],
+          'CourseShortName',
+          [sequelize.fn('COUNT', sequelize.col('CourseShortName')), 'CourseCount'],
+        ],
+        group: ['Month', 'CourseShortName'],
+        raw: true,
+      });
+  
+      res.json(monthlyCounts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
+
+  app.get('/monthCourseCounts', async (req, res) => {
+    try {
+      // Extract the month parameter from the query string
+      const { month } = req.query;
+  
+      // Define a condition to filter by month
+      const monthCondition = month ? { Month: month } : {};
+  
+      const monthlyCounts = await CounselorWiseSummary.findAll({
+        attributes: [
+          [
+            sequelize.fn(
+              'CONCAT',
+              sequelize.fn('LEFT', sequelize.col('Month'), 3),
+              sequelize.fn('RIGHT', sequelize.col('Month'), 2)
+            ),
+            'Month',
+          ],
+          'CourseShortName',
+          [sequelize.fn('COUNT', sequelize.col('CourseShortName')), 'CourseCount'],
+        ],
+        where: monthCondition, // Apply the condition for filtering by month
+        group: ['Month', 'CourseShortName'],
+        raw: true,
+      });
+  
+      res.json(monthlyCounts);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
 // app.post('/conselor-target-totalLead/upload', upload.single('excelFile'), async (req, res) => {
 //     try {
 //         const fileBuffer = req.file.buffer;
