@@ -345,7 +345,7 @@ router.get('/api/unique-monthsID', async (req, res) => {
         [Sequelize.fn('DISTINCT', Sequelize.col('Month')), 'Month'],
       ],
       order: [
-        ['updatedAt', 'DESC'], // Order by updatedAt in descending order
+        ['updatedAt', 'ASC'],  // Order by updatedAt in descending order
       ],
       raw: true,
     });

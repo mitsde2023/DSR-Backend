@@ -97,7 +97,7 @@ const CounselorWiseSummary = sequelize.define('CounselorWiseSummary', {
     type: DataTypes.STRING,
   },
   LeadToSaleDuration: {
-    type: DataTypes.VIRTUAL,
+    type: DataTypes.NUMBER,
   },
 }, {
   timestamps: true,
